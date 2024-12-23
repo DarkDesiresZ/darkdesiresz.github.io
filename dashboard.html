@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TORN Player Stats Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        #stats {
+            margin-top: 20px;
+        }
+        .stat {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>TORN Player Stats Dashboard</h1>
+    <p>Enter your TORN API Key to view your stats:</p>
+    <input type="text" id="apiKey" placeholder="Enter your API key" style="width: 300px; padding: 10px;">
+    <button onclick="fetchStats()" style="padding: 10px 20px; margin-left: 10px;">Fetch Stats</button>
+
+    <div id="stats"></div>
+
+    <script>
+        let interval;
+
+        function fetchStats() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter a valid API key.');
+                return;
+            }
+
+            clearInterval(interval); // Clear any existing intervals
+            updateStats(apiKey); // Fetch stats immediately
+            interval = setInterval(() => updateStats(apiKey), 10000); // Fetch stats every 10 seconds
+        }
+
+        async function updateStats(apiKey) {
+            const url = `https://api.torn.com/user/?selections=basic,personalstats,bars&key=${apiKey}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data. Check your API key or connection.');
+                }
+                const data = await response.json();
+
+                console.log("API Response:", data); // Logs the entire response for debugging
+
+                if (data.error) {
+                    document.getElementById('stats').innerHTML = `<p style="color: red;">Error: ${data.error.error}</p>`;
+                    return;
+                }
+
+                displayStats(data);
+            } catch (error) {
+                document.getElementById('stats').innerHTML = `<p style="color: red;">${error.message}</p>`;
+            }
+        }
+
+        function displayStats(data) {
+            const statsDiv = document.getElementById('stats');
+            statsDiv.innerHTML = `
+                <div class="stat">Name: <strong>${data.name || 'N/A'}</strong></div>
+                <div class="stat">Player ID: <strong>${data.player_id || 'N/A'}</strong></div>
+                <div class="stat">Level: <strong>${data.level || 'N/A'}</strong></div>
+                <div class="stat">Rank: <strong>${data.rank || 'N/A'}</strong></div>
+                <div class="stat">Networth: <strong>${data.personalstats?.networth ? data.personalstats.networth.toLocaleString() : 'N/A'}</strong></div>
+                <div class="stat">Energy: <strong>${data.energy?.current || 'N/A'} / ${data.energy?.maximum || 'N/A'}</strong></div>
+                <div class="stat">Nerve: <strong>${data.nerve?.current || 'N/A'} / ${data.nerve?.maximum || 'N/A'}</strong></div>
+                <div class="stat">Health: <strong>${data.life?.current || 'N/A'} / ${data.life?.maximum || 'N/A'}</strong></div>
+            `;
+        }
+    </script>
+</body>
+</html>
